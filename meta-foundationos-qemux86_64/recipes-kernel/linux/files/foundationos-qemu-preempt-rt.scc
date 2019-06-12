@@ -1,0 +1,7 @@
+define KMACHINE foundationos-qemu
+
+define KARCH i386
+
+include ktypes/preempt-rt/preempt-rt.scc
+
+include foundationos-qemu.scc

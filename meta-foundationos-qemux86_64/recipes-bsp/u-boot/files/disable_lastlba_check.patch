@@ -1,0 +1,21 @@
+Index: u-boot/disk/part_efi.c
+===================================================================
+--- u-boot.orig/disk/part_efi.c
++++ u-boot/disk/part_efi.c
+@@ -120,7 +120,6 @@ static int validate_gpt_header(gpt_heade
+ 	/*
+ 	 * Check that the first_usable_lba and that the last_usable_lba are
+ 	 * within the disk.
+-	 */
+ 	if (le64_to_cpu(gpt_h->first_usable_lba) > lastlba) {
+ 		printf("GPT: first_usable_lba incorrect: %llX > " LBAF "\n",
+ 		       le64_to_cpu(gpt_h->first_usable_lba), lastlba);
+@@ -135,7 +134,7 @@ static int validate_gpt_header(gpt_heade
+ 	debug("GPT: first_usable_lba: %llX last_usable_lba: %llX last lba: "
+ 	      LBAF "\n", le64_to_cpu(gpt_h->first_usable_lba),
+ 	      le64_to_cpu(gpt_h->last_usable_lba), lastlba);
+-
++	*/
+ 	return 0;
+ }
+ 

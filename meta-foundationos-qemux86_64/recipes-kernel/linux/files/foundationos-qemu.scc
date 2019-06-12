@@ -1,0 +1,4 @@
+kconf hardware foundationos-qemu.cfg
+
+kconf hardware foundationos-qemu-user-config.cfg
+include foundationos-qemu-user-patches.scc

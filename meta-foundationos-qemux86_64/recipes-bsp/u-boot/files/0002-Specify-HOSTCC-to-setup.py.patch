@@ -1,0 +1,24 @@
+From d3e819f2fa0f8f5a08ebb5253a6cbdc949eadd20 Mon Sep 17 00:00:00 2001
+From: Surej Joseph <surej.joseph@harman.com>
+Date: Thu, 15 Feb 2018 01:58:44 -0600
+Subject: [PATCH] Specify HOSTCC to setup.py
+
+---
+ tools/Makefile | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/tools/Makefile b/tools/Makefile
+index a0db19d..2495a74 100644
+--- a/tools/Makefile
++++ b/tools/Makefile
+@@ -138,6 +138,7 @@ tools/_libfdt.so: $(LIBFDT_SRCS) $(LIBFDT_SWIG)
+ 		CPPFLAGS="$(_hostc_flags)" OBJDIR=tools \
+ 		SOURCES="$(LIBFDT_SRCS) tools/libfdt.i" \
+ 		SWIG_OPTS="-I$(srctree)/lib/libfdt -I$(srctree)/lib" \
++		CC="$(HOSTCC)" \
+ 		$(PYTHON) $(libfdt_tree)/pylibfdt/setup.py --quiet build_ext \
+ 			--build-lib tools
+ 
+-- 
+2.7.4
+
