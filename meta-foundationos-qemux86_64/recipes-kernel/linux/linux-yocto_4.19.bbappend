@@ -2,12 +2,12 @@ FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 
 PR := "${PR}.1"
 
-COMPATIBLE_MACHINE_foundationos-qemux86 = "foundationos-qemux86"
+COMPATIBLE_MACHINE_foundationos-qemux86-64 = "foundationos-qemux86-64"
 
-KBRANCH_foundationos-qemux86  = "v4.18/standard/base"
-KBUILD_DEFCONFIG_foundationos-qemux86 = "i386_defconfig"
+KBRANCH_foundationos-qemux86-64  = "v4.18/standard/base"
+KBUILD_DEFCONFIG_foundationos-qemux86-64 = "x86_64_defconfig"
 
-KERNEL_FEATURES_append_foundationos-qemux86 += " cfg/smp.scc"
+KERNEL_FEATURES_append_foundationos-qemux86-64 += " cfg/smp.scc"
 
 SRC_URI += "file://foundationos-qemu.cfg\
             file://foundationos-qemu-standard.scc \
