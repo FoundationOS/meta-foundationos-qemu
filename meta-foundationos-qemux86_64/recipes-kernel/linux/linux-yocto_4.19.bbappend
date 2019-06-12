@@ -4,7 +4,7 @@ PR := "${PR}.1"
 
 COMPATIBLE_MACHINE_foundationos-qemux86-64 = "foundationos-qemux86-64"
 
-KBRANCH_foundationos-qemux86-64  = "v4.18/standard/base"
+KBRANCH_foundationos-qemux86-64  = "v4.19/standard/base"
 KBUILD_DEFCONFIG_foundationos-qemux86-64 = "x86_64_defconfig"
 
 KERNEL_FEATURES_append_foundationos-qemux86-64 += " cfg/smp.scc"

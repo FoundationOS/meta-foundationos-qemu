@@ -9,4 +9,3 @@ SRC_URI_append = " \
     file://disable_debugging.patch \
     file://disable_lastlba_check.patch \
 "
-#EXTRA_OEMAKE += "BUILD_ROM=y"

@@ -7,8 +7,8 @@
 # This is because imager plugin updates fstab entries before subdir-as-partition plugin has a chance to update mountpoint
 # Therefore mount points should be specified in base-files fstab
 #
-part  reserved --source dummy --ondisk {FOUNDATIONOS_STORAGE_DEVICE} --size ${FOUNDATIONOS_RESERVED_PART_SIZE} --extra-space 0
-part  u-boot --source rawcopy  --ondisk ${FOUNDATIONOS_STORAGE_DEVICE} --sourceparams="file=u-boot.bin" --label uboot --active --size ${FOUNDATIONOS_UBOOT_PART_SIZE}
+part  reserved --source dummy --ondisk {FOUNDATIONOS_STORAGE_DEVICE} --size ${FOUNDATIONOS_QEMUX86_64_RESERVED_PART_SIZE} --extra-space 0
+part  u-boot --source rawcopy  --ondisk ${FOUNDATIONOS_STORAGE_DEVICE} --sourceparams="file=u-boot.bin" --size ${FOUNDATIONOS_QEMUX86_64_UBOOT_PART_SIZE}
 
 include foundationos.wks.in
 
