@@ -1,19 +1,19 @@
-From e1ed635510ce1f94a3b44f57823c3efbc97ecba1 Mon Sep 17 00:00:00 2001
+From d9e57c2e6d2ed8bd61d2cb2f739038467ffaa563 Mon Sep 17 00:00:00 2001
 From: Surej Joseph <surej.aj@gmail.com>
 Date: Tue, 11 Jun 2019 23:07:23 -0500
 Subject: [PATCH] Defconfig for FoundationOS x86-64 Machine
 
 ---
- configs/foundationos_qemux86_64_mmc_defconfig | 82 +++++++++++++++++++
- 1 file changed, 82 insertions(+)
+ configs/foundationos_qemux86_64_mmc_defconfig | 85 +++++++++++++++++++
+ 1 file changed, 85 insertions(+)
  create mode 100755 configs/foundationos_qemux86_64_mmc_defconfig
 
 diff --git a/configs/foundationos_qemux86_64_mmc_defconfig b/configs/foundationos_qemux86_64_mmc_defconfig
 new file mode 100755
-index 0000000000..7840134aef
+index 0000000000..ad7eff42ec
 --- /dev/null
 +++ b/configs/foundationos_qemux86_64_mmc_defconfig
-@@ -0,0 +1,82 @@
+@@ -0,0 +1,85 @@
 +CONFIG_X86=y
 +CONFIG_SYS_TEXT_BASE=0x1110000
 +CONFIG_SPL_LIBCOMMON_SUPPORT=y
@@ -96,6 +96,9 @@ index 0000000000..7840134aef
 +CONFIG_DOS_PARTITION=y
 +CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR=256
 +CONFIG_CMD_MMC=y
++
++CONFIG_EFI_PARTITION=y
++CONFIG_CMD_GPT=y
 -- 
 2.17.1
 
