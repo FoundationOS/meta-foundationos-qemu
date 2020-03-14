@@ -1,0 +1,380 @@
+From c5df3afb060767f80634a43fa808db524707b6b2 Mon Sep 17 00:00:00 2001
+From: Surej Joseph <surej.aj@gmail.com>
+Date: Wed, 11 Mar 2020 14:44:20 -0500
+Subject: [PATCH] FOS-QEMU:  MMC support in X86_64 SPL
+
+This patch provides support for loading u-boot proper image from
+MMC on X86_64 SPL.
+---
+ arch/x86/dts/qemu-x86_i440fx.dts           |   6 +
+ arch/x86/include/asm/spl.h                 |   5 +
+ arch/x86/lib/Makefile                      |   2 +-
+ board/emulation/qemu-x86/Makefile          |   1 +
+ board/emulation/qemu-x86/spl.c             | 167 +++++++++++++++++++++
+ configs/foundationos_qemux86_mmc_defconfig |  60 +++++---
+ drivers/pci/pci-uclass.c                   |   4 +-
+ include/configs/qemu-x86.h                 |   5 +-
+ 8 files changed, 228 insertions(+), 22 deletions(-)
+ create mode 100644 board/emulation/qemu-x86/spl.c
+
+diff --git a/arch/x86/dts/qemu-x86_i440fx.dts b/arch/x86/dts/qemu-x86_i440fx.dts
+index 2e5210d4ee..7db02b12c5 100644
+--- a/arch/x86/dts/qemu-x86_i440fx.dts
++++ b/arch/x86/dts/qemu-x86_i440fx.dts
+@@ -72,6 +72,12 @@
+ 				>;
+ 			};
+ 		};
++
++		mmc@1f,0 {
++			reg =  <0x00000800 0 0 0 0>;
++			compatible = "pci_mmc";
++			u-boot,dm-pre-reloc;
++		};
+ 	};
+ 
+ };
+diff --git a/arch/x86/include/asm/spl.h b/arch/x86/include/asm/spl.h
+index 8cf59d14e7..20f5947e6e 100644
+--- a/arch/x86/include/asm/spl.h
++++ b/arch/x86/include/asm/spl.h
+@@ -5,3 +5,8 @@
+  *
+  * This file is required for SPL to build, but is empty.
+  */
++enum {
++        BOOT_DEVICE_MMC1,
++        BOOT_DEVICE_MMC2,
++        BOOT_DEVICE_MMC2_2,
++};
+diff --git a/arch/x86/lib/Makefile b/arch/x86/lib/Makefile
+index 1e8efcc44f..5717d4147c 100644
+--- a/arch/x86/lib/Makefile
++++ b/arch/x86/lib/Makefile
+@@ -43,7 +43,7 @@ ifndef CONFIG_SPL_BUILD
+ obj-$(CONFIG_CMD_ZBOOT)	+= zimage.o
+ endif
+ obj-$(CONFIG_HAVE_FSP) += fsp/
+-obj-$(CONFIG_SPL_BUILD) += spl.o
++
+ 
+ lib-$(CONFIG_USE_PRIVATE_LIBGCC) += div64.o
+ 
+diff --git a/board/emulation/qemu-x86/Makefile b/board/emulation/qemu-x86/Makefile
+index 782e298b74..bb4af0fe84 100644
+--- a/board/emulation/qemu-x86/Makefile
++++ b/board/emulation/qemu-x86/Makefile
+@@ -3,3 +3,4 @@
+ # Copyright (C) 2015, Bin Meng <bmeng.cn@gmail.com>
+ 
+ obj-y	+= start.o
++obj-$(CONFIG_SPL_BUILD) += spl.o
+\ No newline at end of file
+diff --git a/board/emulation/qemu-x86/spl.c b/board/emulation/qemu-x86/spl.c
+new file mode 100644
+index 0000000000..83920d53a1
+--- /dev/null
++++ b/board/emulation/qemu-x86/spl.c
+@@ -0,0 +1,167 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (c) 2016 Google, Inc
++ */
++#include <common.h>
++#include <debug_uart.h>
++#include <spl.h>
++#include <asm/cpu.h>
++#include <asm/mtrr.h>
++#include <asm/processor.h>
++#include <asm-generic/sections.h>
++
++DECLARE_GLOBAL_DATA_PTR;
++
++__weak int arch_cpu_init_dm(void)
++{
++	return 0;
++}
++
++static int x86_spl_init(void)
++{
++	/*
++	 * TODO(sjg@chromium.org): We use this area of RAM for the stack
++	 * and global_data in SPL. Once U-Boot starts up and releocates it
++	 * is not needed. We could make this a CONFIG option or perhaps
++	 * place it immediately below CONFIG_SYS_TEXT_BASE.
++	 */
++	char *ptr = (char *)0x110000;
++	int ret;
++
++	ret = x86_cpu_init_f();
++
++	debug("%s starting\n", __func__);
++	ret = spl_init();
++	if (ret) {
++		debug("%s: spl_init() failed\n", __func__);
++		return ret;
++	}
++	ret = arch_cpu_init();
++	if (ret) {
++		debug("%s: arch_cpu_init() failed\n", __func__);
++		return ret;
++	}
++	ret = arch_cpu_init_dm();
++	if (ret) {
++		debug("%s: arch_cpu_init_dm() failed\n", __func__);
++		return ret;
++	}
++	preloader_console_init();
++	ret = print_cpuinfo();
++	if (ret) {
++		debug("%s: print_cpuinfo() failed\n", __func__);
++		return ret;
++	}
++	ret = dram_init();
++	if (ret) {
++		debug("%s: dram_init() failed\n", __func__);
++		return ret;
++	}
++	memset(&__bss_start, 0, (ulong)&__bss_end - (ulong)&__bss_start);
++
++	/* TODO(sjg@chromium.org): Consider calling cpu_init_r() here */
++	ret = interrupt_init();
++	if (ret) {
++		debug("%s: interrupt_init() failed\n", __func__);
++		return ret;
++	}
++
++	pci_init();
++	/*
++	 * The stack grows down from ptr. Put the global data at ptr. This
++	 * will only be used for SPL. Once SPL loads U-Boot proper it will
++	 * set up its own stack.
++	 */
++	gd->new_gd = (struct global_data *)ptr;
++	memcpy(gd->new_gd, gd, sizeof(*gd));
++	arch_setup_gd(gd->new_gd);
++	gd->start_addr_sp = (ulong)ptr;
++
++	/* Cache the SPI flash. Otherwise copying the code to RAM takes ages */
++	ret = mtrr_add_request(MTRR_TYPE_WRBACK,
++			       (1ULL << 32) - CONFIG_XIP_ROM_SIZE,
++			       CONFIG_XIP_ROM_SIZE);
++	if (ret) {
++		debug("%s: SPI cache setup failed\n", __func__);
++		return ret;
++	}
++
++	return 0;
++}
++
++void board_init_f(ulong flags)
++{
++	int ret;
++
++	ret = x86_spl_init();
++	if (ret) {
++		debug("Error %d\n", ret);
++		hang();
++	}
++
++	/* Uninit CAR and jump to board_init_f_r() */
++	board_init_f_r_trampoline(gd->start_addr_sp);
++}
++
++void board_init_f_r(void)
++{
++	init_cache_f_r();
++	gd->flags &= ~GD_FLG_SERIAL_READY;
++	debug("cache status %d\n", dcache_status());
++	board_init_r(gd, 0);
++}
++
++u32 spl_boot_device(void)
++{
++	return BOOT_DEVICE_MMC1;
++}
++
++#ifdef CONFIG_SPL_LOAD_FIT
++int board_fit_config_name_match(const char *name)
++{
++		/* Just empty function now - can't decide what to choose */
++		debug("%s: %s\n", __func__, name);
++
++			return 0;
++}
++#endif
++
++void spl_board_announce_boot_device(void)
++{
++	printf("SPI flash");
++}
++
++static int spl_board_load_image(struct spl_image_info *spl_image,
++				struct spl_boot_device *bootdev)
++{
++	spl_image->size = CONFIG_SYS_MONITOR_LEN;
++	spl_image->entry_point = CONFIG_SYS_TEXT_BASE;
++	spl_image->load_addr = CONFIG_SYS_TEXT_BASE;
++	spl_image->os = IH_OS_U_BOOT;
++	spl_image->name = "U-Boot";
++
++	debug("Loading to %lx\n", spl_image->load_addr);
++
++	return 0;
++}
++
++#ifdef CONFIG_SPL_BUILD
++void board_boot_order(u32 *spl_boot_list) 
++{
++	spl_boot_list[0] = BOOT_DEVICE_MMC1;
++	spl_boot_list[1] = BOOT_DEVICE_BOARD;
++}
++#endif
++
++SPL_LOAD_IMAGE_METHOD("SPI", 1, BOOT_DEVICE_BOARD, spl_board_load_image);
++
++void __noreturn jump_to_image_no_args(struct spl_image_info *spl_image)
++{
++	int ret;
++
++	printf("Jumping to 64-bit U-Boot: Note many features are missing\n");
++	ret = cpu_jump_to_64bit_uboot(spl_image->entry_point);
++	debug("ret=%d\n", ret);
++	while (1)
++		;
++}
+diff --git a/configs/foundationos_qemux86_mmc_defconfig b/configs/foundationos_qemux86_mmc_defconfig
+index 2882997a62..27e3cbaf08 100755
+--- a/configs/foundationos_qemux86_mmc_defconfig
++++ b/configs/foundationos_qemux86_mmc_defconfig
+@@ -1,51 +1,75 @@
+ CONFIG_X86=y
++CONFIG_SYS_TEXT_BASE=0x1110000
++CONFIG_SYS_MALLOC_F_LEN=0x8000
+ CONFIG_MAX_CPUS=2
+-CONFIG_DEFAULT_DEVICE_TREE="qemu-x86_q35"
++
++CONFIG_DEBUG_UART_BASE=0x3f8
++CONFIG_DEBUG_UART_CLOCK=1843200
++CONFIG_X86_RUN_64BIT=y
++CONFIG_TARGET_QEMU_X86_64=y
+ CONFIG_SMP=y
+ CONFIG_GENERATE_PIRQ_TABLE=y
+ CONFIG_GENERATE_MP_TABLE=y
+ CONFIG_GENERATE_ACPI_TABLE=y
++CONFIG_NR_DRAM_BANKS=8
++CONFIG_BUILD_ROM=y
+ CONFIG_FIT=y
+ CONFIG_BOOTSTAGE=y
+ CONFIG_BOOTSTAGE_REPORT=y
+ CONFIG_USE_BOOTARGS=y
+ CONFIG_BOOTARGS="root=/dev/sdb3 init=/sbin/init rootwait ro"
+ CONFIG_SYS_CONSOLE_INFO_QUIET=y
++CONFIG_DISPLAY_BOARDINFO_LATE=y
++CONFIG_LAST_STAGE_INIT=y
++CONFIG_SPL_SYS_MALLOC_SIMPLE=y
+ CONFIG_HUSH_PARSER=y
+ 
+-# CONFIG_CMD_IMLS is not set
+-# CONFIG_CMD_FLASH is not set
+-
+-CONFIG_MAC_PARTITION=y
+-CONFIG_ISO_PARTITION=y
+-CONFIG_EFI_PARTITION=y
+-CONFIG_PARTITION_TYPE_GUID=y
+-CONFIG_SPL_PARTITION_UUIDS=y
++CONFIG_DEFAULT_DEVICE_TREE="qemu-x86_i440fx"
+ CONFIG_REGMAP=y
+ CONFIG_SYSCON=y
+ CONFIG_CPU=y
+-CONFIG_NVME=y
+-CONFIG_USB_STORAGE=y
+-CONFIG_USB_KEYBOARD=y
++
++CONFIG_SPI=y
+ CONFIG_FRAMEBUFFER_SET_VESA_MODE=y
+-CONFIG_FRAMEBUFFER_VESA_MODE_111=y
++CONFIG_FRAMEBUFFER_VESA_MODE_USER=y
++CONFIG_FRAMEBUFFER_VESA_MODE=0x144
+ CONFIG_CONSOLE_SCROLL_LINES=5
+ 
++CONFIG_SPL=y
++CONFIG_SPL_PCI=y
++CONFIG_SPL_DM=y
++CONFIG_SPL_FAT_SUPPORT=y
++CONFIG_SPL_OF_CONTROL=y
++CONFIG_SPL_LOAD_FIT=y
++CONFIG_SPL_ENV_SUPPORT=y
++CONFIG_SPL_LIBCOMMON_SUPPORT=y
++CONFIG_SPL_LIBGENERIC_SUPPORT=y
++CONFIG_SPL_DM_MMC=y
++CONFIG_SPL_MMC_SUPPORT=y
++CONFIG_SPL_SERIAL_SUPPORT=y
++CONFIG_SPL_DRIVERS_MISC_SUPPORT=y
++CONFIG_SPL_TIMER=y
++CONFIG_SPL_RTC_SUPPORT=y
++CONFIG_SPL_EFI_PARTITION=y
++CONFIG_SPL_DM_RTC=y
++# CONFIG_SPL_RAW_IMAGE_SUPPORT is not set
++# CONFIG_SPL_LEGACY_IMAGE_SUPPORT is not set
++
++CONFIG_EFI_PARTIION=y
++CONFIG_PARTITION_TYPE_GUID=y
++
+ CONFIG_CMD_CPU=y
+ CONFIG_CMD_MMC=y
+-CONFIG_CMD_USB=y
+ CONFIG_CMD_FAT=y
+-CONFIG_CMD_FS_GENERIC=y
+ CONFIG_CMD_PART=y
+-CONFIG_CMD_QFW=y
+ CONFIG_CMD_BOOTSTAGE=y
+ CONFIG_CMD_EXT2=y
+ CONFIG_CMD_EXT4=y
+-CONFIG_CMD_EXT4_WRITE=y
+ CONFIG_CMD_GPT=y
++# CONFIG_CMD_SETEXPR is not set
++# CONFIG_CMD_NFS is not set
+ 
+ CONFIG_MMC=y
+ CONFIG_DM_MMC=y
+ CONFIG_MMC_PCI=y
+ CONFIG_MMC_SDHCI=y
+-CONFIG_DOS_PARTITION=y
+\ No newline at end of file
+diff --git a/drivers/pci/pci-uclass.c b/drivers/pci/pci-uclass.c
+index 2cf55cb743..eeb1582e2a 100644
+--- a/drivers/pci/pci-uclass.c
++++ b/drivers/pci/pci-uclass.c
+@@ -698,10 +698,10 @@ static int pci_find_and_bind_driver(struct udevice *parent,
+ 			 * precious memory space as on some platforms as that
+ 			 * space is pretty limited (ie: using Cache As RAM).
+ 			 */
+-			if (!(gd->flags & GD_FLG_RELOC) &&
++			/*if (!(gd->flags & GD_FLG_RELOC) &&
+ 			    !(drv->flags & DM_FLAG_PRE_RELOC))
+ 				return -EPERM;
+-
++			*/
+ 			/*
+ 			 * We could pass the descriptor to the driver as
+ 			 * platdata (instead of NULL) and allow its bind()
+diff --git a/include/configs/qemu-x86.h b/include/configs/qemu-x86.h
+index 4b9ddd6f25..cd1f4c70b9 100644
+--- a/include/configs/qemu-x86.h
++++ b/include/configs/qemu-x86.h
+@@ -39,7 +39,10 @@
+ 
+ #define BOOT_DEVICE_SPI			10
+ 
+-#define CONFIG_SPL_BOARD_LOAD_IMAGE
++#define CONFIG_SYS_MMCSD_FS_BOOT_PARTITION 2
++#define CONFIG_SPL_FS_LOAD_PAYLOAD_NAME "u-boot.img"
+ #define BOOT_DEVICE_BOARD		11
+ 
++
++
+ #endif	/* __CONFIG_H */
+-- 
+2.17.1
+

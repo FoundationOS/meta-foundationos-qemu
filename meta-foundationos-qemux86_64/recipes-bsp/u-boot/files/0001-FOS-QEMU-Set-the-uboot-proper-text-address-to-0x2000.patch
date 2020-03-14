@@ -1,0 +1,23 @@
+From 120a2bb8b6adc918361b0838dc1d819544ad532e Mon Sep 17 00:00:00 2001
+From: Surej Joseph <Joseph_Surej@shure.com>
+Date: Thu, 12 Mar 2020 16:44:00 -0500
+Subject: [PATCH] FOS-QEMU: Set the uboot proper text address to 0x2000000
+
+---
+ configs/foundationos_qemux86_mmc_defconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/configs/foundationos_qemux86_mmc_defconfig b/configs/foundationos_qemux86_mmc_defconfig
+index 81be2e2db5..6777693037 100755
+--- a/configs/foundationos_qemux86_mmc_defconfig
++++ b/configs/foundationos_qemux86_mmc_defconfig
+@@ -1,5 +1,5 @@
+ CONFIG_X86=y
+-CONFIG_SYS_TEXT_BASE=0x1110000
++CONFIG_SYS_TEXT_BASE=0x2000000
+ CONFIG_SYS_MALLOC_F_LEN=0x8000
+ CONFIG_MAX_CPUS=2
+ 
+-- 
+2.17.1
+
