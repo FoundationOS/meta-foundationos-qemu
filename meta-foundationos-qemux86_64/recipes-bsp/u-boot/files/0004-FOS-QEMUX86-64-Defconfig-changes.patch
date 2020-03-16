@@ -1,0 +1,52 @@
+From b9623144a59515dd04f39df9b18f9115b38fb3b1 Mon Sep 17 00:00:00 2001
+From: Surej Joseph <surej.aj@gmail.com>
+Date: Mon, 16 Mar 2020 11:15:44 -0500
+Subject: [PATCH 4/4] FOS-QEMUX86-64: Defconfig changes
+
+Add support for LZO decompression in uboot
+
+Removing CONFIG_SYS_TEXT_BASE from defconfig
+
+Removing 64bit uboot support. This is because 64bit uboot
+does not support loading 64bit kernel.
+
+Removing BINMAN support in defconfig. BINMAN support was causing
+the u-boot-spl binary to ballon to 4G file. BINMAN config can be
+enabled once the balloing issue is resolved.
+---
+ configs/foundationos_qemux86_mmc_defconfig | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/configs/foundationos_qemux86_mmc_defconfig b/configs/foundationos_qemux86_mmc_defconfig
+index 6777693037..4536825e26 100755
+--- a/configs/foundationos_qemux86_mmc_defconfig
++++ b/configs/foundationos_qemux86_mmc_defconfig
+@@ -1,12 +1,9 @@
+ CONFIG_X86=y
+-CONFIG_SYS_TEXT_BASE=0x2000000
+ CONFIG_SYS_MALLOC_F_LEN=0x8000
+ CONFIG_MAX_CPUS=2
+ 
+ CONFIG_DEBUG_UART_BASE=0x3f8
+ CONFIG_DEBUG_UART_CLOCK=1843200
+-CONFIG_X86_RUN_64BIT=y
+-CONFIG_TARGET_QEMU_X86_64=y
+ CONFIG_SMP=y
+ CONFIG_GENERATE_PIRQ_TABLE=y
+ CONFIG_GENERATE_MP_TABLE=y
+@@ -28,6 +25,7 @@ CONFIG_DEFAULT_DEVICE_TREE="qemu-x86_i440fx"
+ CONFIG_REGMAP=y
+ CONFIG_SYSCON=y
+ CONFIG_CPU=y
++CONFIG_LZO=y
+ 
+ CONFIG_SPI=y
+ CONFIG_FRAMEBUFFER_SET_VESA_MODE=y
+@@ -76,3 +74,4 @@ CONFIG_DM_MMC=y
+ # CONFIG_DM_VIDEO is not set
+ 
+ # CONFIG_VIDEO_VESA is not set
++# CONFIG_BINMAN is not set
+-- 
+2.17.1
+

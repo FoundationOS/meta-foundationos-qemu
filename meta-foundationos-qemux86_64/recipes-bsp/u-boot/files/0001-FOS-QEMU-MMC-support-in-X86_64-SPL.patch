@@ -1,10 +1,12 @@
-From c5df3afb060767f80634a43fa808db524707b6b2 Mon Sep 17 00:00:00 2001
+From 2671c6a8ea5e4516aa19262955403a1aeb590b65 Mon Sep 17 00:00:00 2001
 From: Surej Joseph <surej.aj@gmail.com>
 Date: Wed, 11 Mar 2020 14:44:20 -0500
-Subject: [PATCH] FOS-QEMU:  MMC support in X86_64 SPL
+Subject: [PATCH 1/4] FOS-QEMU: MMC support in X86_64 SPL
 
 This patch provides support for loading u-boot proper image from
 MMC on X86_64 SPL.
+
+%% original patch: 0001-FOS-QEMU-MMC-support-in-X86_64-SPL.patch
 ---
  arch/x86/dts/qemu-x86_i440fx.dts           |   6 +
  arch/x86/include/asm/spl.h                 |   5 +

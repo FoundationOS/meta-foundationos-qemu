@@ -1,4 +1,4 @@
-inherit kernel-artifact-names uboot-sign
+inherit kernel-uboot kernel-artifact-names uboot-sign
 
 python __anonymous () {
     kerneltypes = d.getVar('KERNEL_IMAGETYPES') or ""
@@ -340,18 +340,6 @@ EOF
 	cat << EOF >> ${1}
                 };
 EOF
-}
-
-uboot_prep_kimage() {
-	if [ -e arch/${ARCH}/boot/compressed/vmlinux.bin.lzo ]; then
-		rm -f linux.bin
-		cp -l arch/${ARCH}/boot/compressed/vmlinux.bin.lzo linux.bin
-		vmlinux_path=""
-		linux_suffix=""
-		linux_comp="lzo"
-	fi
-
-	echo "${linux_comp}"
 }
 
 #
