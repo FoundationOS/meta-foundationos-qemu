@@ -1,0 +1,37 @@
+From 882f0e56977be7696fc3c90c60d37861a35549ae Mon Sep 17 00:00:00 2001
+From: Surej Joseph <surej.aj@gmail.com>
+Date: Wed, 18 Mar 2020 10:41:17 -0500
+Subject: [PATCH] Disable lastlba check
+
+---
+ block/partitions/efi.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/block/partitions/efi.c b/block/partitions/efi.c
+index 39f70d968754..342153c60c8b 100644
+--- a/block/partitions/efi.c
++++ b/block/partitions/efi.c
+@@ -405,10 +405,9 @@ static int is_gpt_valid(struct parsed_partitions *state, u64 lba,
+ 			 (unsigned long long)lba);
+ 		goto fail;
+ 	}
+-
+ 	/* Check the first_usable_lba and last_usable_lba are
+ 	 * within the disk.
+-	 */
++	 
+ 	lastlba = last_lba(state->bdev);
+ 	if (le64_to_cpu((*gpt)->first_usable_lba) > lastlba) {
+ 		pr_debug("GPT: first_usable_lba incorrect: %lld > %lld\n",
+@@ -428,6 +427,8 @@ static int is_gpt_valid(struct parsed_partitions *state, u64 lba,
+ 			 (unsigned long long)le64_to_cpu((*gpt)->first_usable_lba));
+ 		goto fail;
+ 	}
++	*/
++
+ 	/* Check that sizeof_partition_entry has the correct value */
+ 	if (le32_to_cpu((*gpt)->sizeof_partition_entry) != sizeof(gpt_entry)) {
+ 		pr_debug("GUID Partition Entry Size check failed.\n");
+-- 
+2.17.1
+
