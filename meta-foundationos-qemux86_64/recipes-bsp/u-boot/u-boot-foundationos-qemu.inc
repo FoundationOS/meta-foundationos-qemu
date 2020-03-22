@@ -5,7 +5,6 @@ FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 
 SRC_URI_append = " \
     file://0001-Defconfig-for-loading-kernel-from-mmc.patch \
-    file://disable_lastlba_check.patch \
     file://0001-FOS-QEMU-MMC-support-in-X86_64-SPL.patch \
     file://0002-FOS-QEMU-Load-uboot-proper-from-bootloader_a-partiti.patch \
     file://0003-FOS-QEMUX86_64-Increase-the-memory-allocatable-size-.patch \
