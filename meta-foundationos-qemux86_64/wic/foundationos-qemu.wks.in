@@ -7,18 +7,7 @@
 # This is because imager plugin updates fstab entries before subdir-as-partition plugin has a chance to update mountpoint
 # Therefore mount points should be specified in base-files fstab
 #
-part  reserved --source dummy --ondisk {FOUNDATIONOS_STORAGE_DEVICE} --size ${FOUNDATIONOS_QEMUX86_64_RESERVED_PART_SIZE} --part-name "env"  --extra-space 0
-
-part  u-boot_a --source rawcopy --ondisk ${FOUNDATIONOS_STORAGE_DEVICE} --part-name "bootloader_a" --sourceparams="file=u-boot-proper.bin" --size ${FOUNDATIONOS_QEMUX86_64_KERNEL_PART_SIZE} --align ${FOUNDATIONOS_PARTITION_ALIGNMENT}
-part  u-boot_b --source rawcopy --ondisk ${FOUNDATIONOS_STORAGE_DEVICE} --part-name "bootloader_b" --sourceparams="file=u-boot-proper.bin" --size ${FOUNDATIONOS_QEMUX86_64_KERNEL_PART_SIZE} --align ${FOUNDATIONOS_PARTITION_ALIGNMENT}
-
-#part  kernel_a --source rawcopy --ondisk ${FOUNDATIONOS_STORAGE_DEVICE} --part-name "kernel_a" --sourceparams="file=fitImage" --size ${FOUNDATIONOS_QEMUX86_64_KERNEL_PART_SIZE} --align ${FOUNDATIONOS_PARTITION_ALIGNMENT}
-#part  kernel_b --source rawcopy --ondisk ${FOUNDATIONOS_STORAGE_DEVICE} --part-name "kernel_b" --sourceparams="file=fitImage" --size ${FOUNDATIONOS_QEMUX86_64_KERNEL_PART_SIZE} --align ${FOUNDATIONOS_PARTITION_ALIGNMENT}
-
-#Kernel
-part  boot_a --source bootimg-partition --ondisk ${FOUNDATIONOS_STORAGE_DEVICE} --part-name "boot_a" --size ${FOUNDATIONOS_QEMUX86_64_KERNEL_PART_SIZE} --align ${FOUNDATIONOS_PARTITION_ALIGNMENT}
-part  boot_b --source bootimg-partition --ondisk ${FOUNDATIONOS_STORAGE_DEVICE} --part-name "boot_b" --size ${FOUNDATIONOS_QEMUX86_64_KERNEL_PART_SIZE} --align ${FOUNDATIONOS_PARTITION_ALIGNMENT}
-
+part  reserved --source dummy --ondisk ${FOUNDATIONOS_STORAGE_DEVICE} --size ${FOUNDATIONOS_QEMUX86_64_RESERVED_PART_SIZE} --part-name "env"  --extra-space 0
 
 include foundationos.wks.in
 
